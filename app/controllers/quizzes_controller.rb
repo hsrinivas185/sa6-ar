@@ -1,5 +1,13 @@
 class QuizzesController < ApplicationController
   before_action :authenticate_user!, except: [:index]
+  before_action :require_permission, except: [:index, :show, :new, :create]
+
+  def require_permission
+    if Quiz.find(params[:id]).creator != current_user
+      flash[:error] = 'You do not have permission to do that.'
+      redirect_to quizzes_path
+    end
+  end
 
   def index
     @quizzes = Quiz.all
@@ -17,7 +25,7 @@ class QuizzesController < ApplicationController
   end
 
   def create
-    @quiz = Quiz.new(params.require(:quiz).permit(:title, :description))
+    @quiz = current_user.quizzes.build(params.require(:quiz).permit(:title, :description))
     if @quiz.save
       flash[:success] = 'New quiz successfully created!'
       redirect_to quizzes_url
